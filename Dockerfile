@@ -11,18 +11,22 @@ RUN apt-get update && \
     libsuitesparse-dev \
     libboost-all-dev \
     libeigen3-dev \
-    libopencv-dev python3-opencv
+    libopencv-dev python3-dev python3-opencv
 # ceres
 WORKDIR /home/
 RUN git clone -b '1.13.0' https://ceres-solver.googlesource.com/ceres-solver && cd ./ceres-solver/ && cmake . -DEXPORT_BUILD_DIR=ON && make -j8 install
 
 # basalt (opengv is included in basalt) from gitlab
 WORKDIR /app/pnec/third_party
-RUN git clone --recursive https://gitlab.com/VladyslavUsenko/basalt.git && \
-# # get the latest version of magic enum, to avoid compiling errors
-    cd basalt/thirdparty/ && \
-    rm -r magic_enum && \
+RUN git clone https://gitlab.com/VladyslavUsenko/basalt.git && \
+    cd basalt && \
+    git checkout 24325f2a06d4e7264064fb3e64295b0c36acd371 && \
+    git submodule update --init --recursive && \
+    cd thirdparty && \
+    # get the latest version of magic_enum, to avoid compiling errors with newer toolchains
+    if [ -d magic_enum ]; then rm -rf magic_enum; fi && \
     git clone https://github.com/Neargye/magic_enum.git && \
+    printf '#pragma once\n#include <magic_enum/magic_enum.hpp>\n' > magic_enum/include/magic_enum.hpp && \
     cd .. && \
     ./scripts/install_deps.sh
 
